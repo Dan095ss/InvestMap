@@ -26,8 +26,8 @@ COPY . .
 
 # Seed-данные — entrypoint копирует их в volumes при первом старте
 RUN cp -r app/static/uploads app/static/uploads_seed \
-    && cp -r instance instance_seed \
-    && mkdir -p instance app/static/uploads
+    && mkdir -p instance instance_seed app/static/uploads \
+    && if [ -f instance/investmap.db ]; then cp instance/investmap.db instance_seed/investmap.db; fi
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
