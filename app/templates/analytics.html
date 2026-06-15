@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Аналитика — InvestMap{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-head">
+        <h1>Аналитика портала</h1>
+        <p class="page-head__lead">Сводные показатели по проектам и инициативам Приморского края.</p>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:24px;">
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.projects }}</div>
+            <div class="stat-card__label">проектов на карте</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.initiatives }}</div>
+            <div class="stat-card__label">инициатив</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.users }}</div>
+            <div class="stat-card__label">пользователей</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.budget_sum|money }}</div>
+            <div class="stat-card__label">суммарный бюджет</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.raised_sum|money }}</div>
+            <div class="stat-card__label">собрано жителями</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.votes_sum }}</div>
+            <div class="stat-card__label">голосов</div>
+        </div>
+    </div>
+
+    <div class="analytics-grid">
+        <div class="chart-card">
+            <h3>Проекты по типам</h3>
+            <canvas id="chartType"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Проекты по статусу</h3>
+            <canvas id="chartStatus"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Проекты по районам</h3>
+            <canvas id="chartDistrict"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Бюджет по типам (₽)</h3>
+            <canvas id="chartBudget"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Авторы инициатив</h3>
+            <canvas id="chartAuthor"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Сборы инициатив по районам (₽)</h3>
+            <canvas id="chartDistrictMoney"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const palette = ["#4f46e5","#16a34a","#f59e0b","#ec4899","#0ea5e9","#8b5cf6","#f43f5e","#14b8a6","#fb923c","#64748b"];
+    const money = v => (Number(v).toLocaleString("ru-RU")) + " ₽";
+
+    const common = {
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } } },
+        maintainAspectRatio: false,
+    };
+
+    const byType = {{ by_type|tojson }};
+    const byStatus = {{ by_status|tojson }};
+    const byDistrict = {{ by_district|tojson }};
+    const byAuthor = {{ by_author|tojson }};
+    const districtMoney = {{ district_collected|tojson }};
+
+    new Chart(document.getElementById("chartType"), {
+        type: "doughnut",
+        data: { labels: byType.map(x => x.label),
+                datasets: [{ data: byType.map(x => x.count), backgroundColor: palette }] },
+        options: common,
+    });
+
+    new Chart(document.getElementById("chartStatus"), {
+        type: "pie",
+        data: { labels: byStatus.map(x => x.label),
+                datasets: [{ data: byStatus.map(x => x.count), backgroundColor: palette }] },
+        options: common,
+    });
+
+    new Chart(document.getElementById("chartDistrict"), {
+        type: "bar",
+        data: { labels: byDistrict.map(x => x.label),
+                datasets: [{ label: "Проекты", data: byDistrict.map(x => x.count), backgroundColor: "#4f46e5" }] },
+        options: { ...common, indexAxis: "y", plugins: { legend: { display: false } } },
+    });
+
+    new Chart(document.getElementById("chartBudget"), {
+        type: "bar",
+        data: { labels: byType.map(x => x.label),
+                datasets: [{ label: "Бюджет, ₽", data: byType.map(x => x.budget), backgroundColor: "#16a34a" }] },
+        options: { ...common, plugins: { ...common.plugins, legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => money(ctx.parsed.y) } } },
+                   scales: { y: { ticks: { callback: v => (v / 1_000_000).toFixed(0) + " млн" } } } },
+    });
+
+    new Chart(document.getElementById("chartAuthor"), {
+        type: "doughnut",
+        data: { labels: byAuthor.map(x => x.label),
+                datasets: [{ data: byAuthor.map(x => x.count), backgroundColor: ["#4f46e5","#ec4899","#16a34a"] }] },
+        options: common,
+    });
+
+    new Chart(document.getElementById("chartDistrictMoney"), {
+        type: "bar",
+        data: { labels: districtMoney.map(x => x.label),
+                datasets: [{ label: "Собрано, ₽", data: districtMoney.map(x => x.amount), backgroundColor: "#fb923c" }] },
+        options: { ...common, plugins: { ...common.plugins, legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => money(ctx.parsed.y) } } } },
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "admin/_base.html" %}
+{% block title %}Проекты · Админ — InvestMap{% endblock %}
+
+{% block admin_content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <h1>Проекты ({{ projects|length }})</h1>
+    <a href="{{ url_for('admin.project_form') }}" class="btn btn--primary">+ Новый проект</a>
+</div>
+
+<table class="admin-table">
+    <thead><tr><th>Название</th><th>Тип</th><th>Статус</th><th>Район</th><th>Бюджет</th><th></th></tr></thead>
+    <tbody>
+        {% for p in projects %}
+        <tr>
+            <td><a href="{{ url_for('projects.detail', slug=p.slug) }}">{{ p.title }}</a></td>
+            <td>{{ p.type }}</td>
+            <td>{{ p.status }}</td>
+            <td>{{ p.district }}</td>
+            <td>{% if p.budget %}{{ p.budget|money }}{% else %}—{% endif %}</td>
+            <td style="display:flex;gap:6px;">
+                <a href="{{ url_for('admin.project_form', pid=p.id) }}" class="btn btn--ghost btn--sm">✎</a>
+                <form method="post" action="{{ url_for('admin.project_delete', pid=p.id) }}" onsubmit="return confirm('Удалить проект «{{ p.title }}»?')">
+                    <button class="btn btn--danger btn--sm">✕</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

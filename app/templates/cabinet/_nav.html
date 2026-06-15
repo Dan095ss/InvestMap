@@ -1,0 +1,16 @@
+<aside class="cabinet-nav">
+    <a href="{{ url_for('cabinet.index') }}" class="{% if request.endpoint == 'cabinet.index' %}active{% endif %}">Обзор</a>
+    <a href="{{ url_for('cabinet.profile') }}" class="{% if request.endpoint == 'cabinet.profile' %}active{% endif %}">Профиль</a>
+    <a href="{{ url_for('cabinet.subscriptions') }}" class="{% if request.endpoint.startswith('cabinet.subscriptions') or request.endpoint == 'cabinet.remove_subscription' %}active{% endif %}">Подписки</a>
+    <a href="{{ url_for('cabinet.notifications') }}" class="{% if 'notifications' in request.endpoint %}active{% endif %}">
+        Уведомления{% if unread_notifications %} <span class="chip chip--primary" style="margin-left:auto">{{ unread_notifications }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('cabinet.activity') }}" class="{% if request.endpoint == 'cabinet.activity' %}active{% endif %}">История</a>
+    {% if current_user.is_investor %}
+        <a href="{{ url_for('cabinet.interests') }}" class="{% if request.endpoint == 'cabinet.interests' %}active{% endif %}">Мои заявки</a>
+    {% endif %}
+    <a href="{{ url_for('cabinet.support') }}" class="{% if request.endpoint == 'cabinet.support' %}active{% endif %}">Поддержка</a>
+    {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.index') }}" style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">⚙ Админ-панель</a>
+    {% endif %}
+</aside>

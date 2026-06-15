@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Подписки — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="cabinet-layout">
+    {% include "cabinet/_nav.html" %}
+    <div>
+        <h1 class="cabinet-title">Подписки</h1>
+
+        <div class="card mb-3">
+            <h3 class="mb-2">Подписаться на район</h3>
+            <form method="post" class="flex gap-sm" style="align-items:end; flex-wrap:wrap;">
+                <div class="form-row" style="flex:1;min-width:220px;margin-bottom:0;">
+                    <label>Район</label>
+                    <select name="district" required>
+                        <option value="">Выберите район…</option>
+                        {% for d in DISTRICTS %}<option>{{ d }}</option>{% endfor %}
+                    </select>
+                </div>
+                <button class="btn btn--primary" type="submit">Подписаться</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 class="mb-2">Ваши подписки</h3>
+            {% if subs %}
+                <div class="list-group" style="border:none;">
+                    {% for s in subs %}
+                        <div class="list-item" style="border-bottom:1px solid var(--border);">
+                            <div class="list-item__main">
+                                {% if s.project %}
+                                    <div class="list-item__title"><a href="{{ url_for('projects.detail', slug=s.project.slug) }}">{{ s.project.title }}</a></div>
+                                    <div class="list-item__meta">Проект · {{ s.project.district }}</div>
+                                {% else %}
+                                    <div class="list-item__title">Район «{{ s.district }}»</div>
+                                    <div class="list-item__meta">Все проекты района</div>
+                                {% endif %}
+                            </div>
+                            <form method="post" action="{{ url_for('cabinet.remove_subscription', sub_id=s.id) }}">
+                                <button class="btn btn--ghost btn--sm" type="submit">Отписаться</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">Подписок пока нет.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

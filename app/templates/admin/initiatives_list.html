@@ -1,0 +1,50 @@
+{% extends "admin/_base.html" %}
+{% block title %}Инициативы · Админ — InvestMap{% endblock %}
+
+{% block admin_content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <h1>Инициативы ({{ initiatives|length }})</h1>
+    {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.initiative_form') }}" class="btn btn--primary">+ Новая инициатива</a>
+    {% endif %}
+</div>
+
+<table class="admin-table">
+    <thead><tr><th>Название</th><th>Район</th><th>Цель</th><th>Собрано</th><th>Статус</th><th></th></tr></thead>
+    <tbody>
+        {% for i in initiatives %}
+        <tr>
+            <td><a href="{{ url_for('initiatives.detail', slug=i.slug) }}">{{ i.title }}</a><br>
+                <span class="muted" style="font-size:11px;">{{ i.author_name or '—' }}</span>
+            </td>
+            <td>{{ i.district }}</td>
+            <td>{{ i.goal_amount|money }}</td>
+            <td>{{ i.collected_amount|money }} ({{ i.progress_pct }}%)</td>
+            <td>
+                {% if i.status == 'moderation' %}<span class="chip chip--moderation">На модерации</span>
+                {% elif i.status == 'rejected' %}<span class="chip chip--rejected">Отклонена</span>
+                {% elif i.status == 'funded' %}<span class="chip chip--success">Собрана</span>
+                {% elif i.status == 'active' %}<span class="chip chip--info">Активна</span>
+                {% else %}<span class="chip">{{ i.status }}</span>{% endif %}
+            </td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                {% if i.status == 'moderation' %}
+                    <form method="post" action="{{ url_for('admin.initiative_approve', iid=i.id) }}">
+                        <button class="btn btn--primary btn--sm">✓</button>
+                    </form>
+                    <form method="post" action="{{ url_for('admin.initiative_reject', iid=i.id) }}">
+                        <button class="btn btn--ghost btn--sm">✗</button>
+                    </form>
+                {% endif %}
+                {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('admin.initiative_form', iid=i.id) }}" class="btn btn--ghost btn--sm">✎</a>
+                    <form method="post" action="{{ url_for('admin.initiative_delete', iid=i.id) }}" onsubmit="return confirm('Удалить инициативу?')">
+                        <button class="btn btn--danger btn--sm">✕</button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

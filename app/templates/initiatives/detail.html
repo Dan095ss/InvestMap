@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}{{ initiative.title }} — Инициатива — InvestMap{% endblock %}
+
+{% block content %}
+<div class="project-hero">
+    <div class="container">
+        <div class="breadcrumbs">
+            <a href="{{ url_for('initiatives.list_initiatives') }}">Инициативы</a> /
+            <span>{{ initiative.title }}</span>
+        </div>
+        <div class="project-hero__chips">
+            {% if initiative.district %}<span class="chip">{{ initiative.district }}</span>{% endif %}
+            <span class="chip {% if initiative.status == 'funded' %}chip--success{% elif initiative.status == 'closed' %}chip--info{% else %}chip--warning{% endif %}">
+                {% if initiative.status == 'active' %}Идёт сбор{% elif initiative.status == 'funded' %}Средства собраны{% else %}Завершена{% endif %}
+            </span>
+            <span class="chip chip--muted">👁 {{ initiative.views }} просмотров</span>
+        </div>
+        <h1>{{ initiative.title }}</h1>
+        <p class="project-hero__lead">{{ initiative.short_description }}</p>
+        <div class="project-hero__actions">
+            {% if current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('initiatives.favorite', slug=initiative.slug) }}">
+                    <input type="hidden" name="next" value="{{ request.url }}">
+                    <button class="btn {% if is_favorited %}btn--warning{% else %}btn--ghost{% endif %}">
+                        {% if is_favorited %}★ В избранном{% else %}☆ В избранное{% endif %}
+                    </button>
+                </form>
+            {% else %}
+                <a class="btn btn--ghost" href="{{ url_for('auth.login') }}">☆ В избранное</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container">
+<div class="project-layout">
+    <div>
+        <section class="card">
+            <h2 class="project-section-title">Об инициативе</h2>
+            <p style="white-space: pre-line;">{{ initiative.description }}</p>
+
+            <div class="initiative-source">
+                <div class="initiative-source__badge
+                    {% if initiative.author_type == 'municipality' %}initiative-source__badge--blue
+                    {% elif initiative.author_type == 'ngo' %}initiative-source__badge--green
+                    {% else %}initiative-source__badge--orange{% endif %}">
+                    {% if initiative.author_type == 'municipality' %}🏛️ Муниципалитет
+                    {% elif initiative.author_type == 'ngo' %}🤝 НКО
+                    {% else %}👤 Инициатива жителя{% endif %}
+                </div>
+                {% if initiative.author_name %}
+                    <span class="initiative-source__name">{{ initiative.author_name }}</span>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="project-section-title">Голосование</h2>
+            <p class="muted">Поддержите инициативу — ваш голос поможет её продвижению.</p>
+            {% if current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('initiatives.vote', slug=initiative.slug) }}">
+                    <button class="btn {% if has_voted %}btn--ghost{% else %}btn--primary{% endif %}">
+                        {% if has_voted %}★ Вы проголосовали (отозвать){% else %}☆ Голосовать{% endif %}
+                    </button>
+                    <span class="muted" style="margin-left:10px;">Всего голосов: <strong>{{ initiative.votes_count }}</strong></span>
+                </form>
+            {% else %}
+                <a class="btn btn--primary" href="{{ url_for('auth.login', next=url_for('initiatives.detail', slug=initiative.slug)) }}">Войти, чтобы проголосовать</a>
+            {% endif %}
+        </section>
+
+        <section class="card" id="donate">
+            <h2 class="project-section-title">Поддержать рублём</h2>
+            <div class="progress"><div class="progress__bar" style="width:{{ initiative.progress_pct }}%"></div></div>
+            <div class="progress-stats mb-2">
+                <span>Собрано <strong>{{ initiative.collected_amount|money }}</strong> из {{ initiative.goal_amount|money }}</span>
+                <span>{{ initiative.progress_pct }}%</span>
+            </div>
+
+            {% if initiative.status == 'active' and current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('initiatives.donate', slug=initiative.slug) }}" class="mt-2">
+                    <div class="form-row">
+                        <label>Сумма взноса (₽)</label>
+                        <div class="filter-pills" style="margin-bottom:10px;" id="amountPills">
+                            {% for amt in [100, 300, 500, 1000, 3000] %}
+                                <button type="button" class="filter-pill" data-amt="{{ amt }}">{{ amt }} ₽</button>
+                            {% endfor %}
+                        </div>
+                        <input id="amountInput" type="number" name="amount" min="100" step="50" placeholder="Или введите свою сумму" required>
+                    </div>
+                    <div class="form-row">
+                        <label style="display:flex;gap:8px;align-items:center;font-weight:500;">
+                            <input type="checkbox" name="anonymous"> Сделать взнос анонимно
+                        </label>
+                    </div>
+                    <button class="btn btn--primary btn--lg" type="submit">Поддержать (демо-оплата)</button>
+                    <p class="form-hint mt-2">Реальной оплаты нет — это демонстрационный макет.</p>
+                </form>
+            {% elif initiative.status != 'active' %}
+                <p class="muted">Сбор средств закрыт.</p>
+            {% else %}
+                <a class="btn btn--primary" href="{{ url_for('auth.login', next=url_for('initiatives.detail', slug=initiative.slug)) }}">Войти, чтобы поддержать</a>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2 class="project-section-title">Последние взносы</h2>
+            {% if initiative.donations %}
+                <div class="list-group" style="border:none;">
+                    {% for d in initiative.donations[-10:]|reverse %}
+                        <div class="list-item" style="border-bottom:1px solid var(--border);">
+                            <div class="comment__avatar">{% if d.anonymous or not d.user %}?{% else %}{{ d.user.name[:1]|upper }}{% endif %}</div>
+                            <div class="list-item__main">
+                                <div class="list-item__title">
+                                    {% if d.anonymous or not d.user %}Аноним{% else %}{{ d.user.name }}{% endif %}
+                                    <span class="chip chip--success" style="margin-left:8px;">+ {{ d.amount|money }}</span>
+                                </div>
+                                <div class="list-item__meta">{{ d.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">Пока взносов нет — будьте первым!</div>
+            {% endif %}
+        </section>
+    </div>
+
+    <aside>
+        <div class="card project-meta-card">
+            <h3 class="mb-2">Статистика</h3>
+            <div class="meta-row"><span class="meta-row__label">Цель</span><span class="meta-row__value">{{ initiative.goal_amount|money }}</span></div>
+            <div class="meta-row"><span class="meta-row__label">Собрано</span><span class="meta-row__value">{{ initiative.collected_amount|money }}</span></div>
+            <div class="meta-row"><span class="meta-row__label">Голосов</span><span class="meta-row__value">★ {{ initiative.votes_count }}</span></div>
+            <div class="meta-row"><span class="meta-row__label">Просмотров</span><span class="meta-row__value">👁 {{ initiative.views }}</span></div>
+            <div class="meta-row"><span class="meta-row__label">Взносов</span><span class="meta-row__value">{{ initiative.donations|length }}</span></div>
+            {% if initiative.end_date %}
+                <div class="meta-row"><span class="meta-row__label">До</span><span class="meta-row__value">{{ initiative.end_date|date_ru }}</span></div>
+            {% endif %}
+            {% if initiative.lat and initiative.lng %}
+                <div class="divider"></div>
+                <div id="miniMap" style="height:200px;border-radius:10px;overflow:hidden;"></div>
+            {% endif %}
+        </div>
+    </aside>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if initiative.lat and initiative.lng %}
+<script>
+    const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: false })
+        .setView([{{ initiative.lat }}, {{ initiative.lng }}], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+    L.marker([{{ initiative.lat }}, {{ initiative.lng }}]).addTo(miniMap);
+</script>
+{% endif %}
+<script>
+    const input = document.getElementById('amountInput');
+    document.querySelectorAll('#amountPills .filter-pill').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('#amountPills .filter-pill').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            if (input) input.value = b.dataset.amt;
+        });
+    });
+</script>
+{% endblock %}

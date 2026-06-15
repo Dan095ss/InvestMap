@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Вход — InvestMap{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>Вход в аккаунт</h1>
+        <p class="auth-card__lead">Рады видеть снова.</p>
+
+        <form method="post">
+            <div class="form-row">
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" value="{{ email or '' }}" required autofocus>
+            </div>
+            <div class="form-row">
+                <label for="password">Пароль</label>
+                <input id="password" type="password" name="password" required>
+            </div>
+            <div class="form-row">
+                <label style="display:flex;align-items:center;gap:8px;font-weight:500;">
+                    <input type="checkbox" name="remember"> Запомнить меня
+                </label>
+            </div>
+            <button class="btn btn--primary btn--block" type="submit">Войти</button>
+        </form>
+
+        <div class="divider"></div>
+        <p class="text-center muted">
+            Нет аккаунта? <a href="{{ url_for('auth.register') }}">Зарегистрируйтесь</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

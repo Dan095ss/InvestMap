@@ -1,0 +1,38 @@
+{% extends "admin/_base.html" %}
+{% block title %}Пользователь {{ user.email }} — InvestMap{% endblock %}
+
+{% block admin_content %}
+<h1>Пользователь: {{ user.email }}</h1>
+<form method="post" class="form-stack" style="max-width:none;">
+    <label><span>Имя</span>
+        <input type="text" name="name" required value="{{ user.name }}">
+    </label>
+    <div class="form-row-2">
+        <label><span>Роль</span>
+            <select name="role">
+                <option value="user" {% if user.role == 'user' %}selected{% endif %}>Пользователь</option>
+                <option value="moderator" {% if user.role == 'moderator' %}selected{% endif %}>Модератор</option>
+                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Администратор</option>
+            </select>
+        </label>
+        <label><span>Тип профиля</span>
+            <select name="profile_type">
+                <option value="physical" {% if user.profile_type == 'physical' %}selected{% endif %}>Физическое лицо</option>
+                <option value="investor" {% if user.profile_type == 'investor' %}selected{% endif %}>Инвестор / юрлицо</option>
+            </select>
+        </label>
+    </div>
+    <div class="form-row-2">
+        <label><span>Компания</span>
+            <input type="text" name="company_name" value="{{ user.company_name or '' }}">
+        </label>
+        <label><span>ИНН</span>
+            <input type="text" name="inn" value="{{ user.inn or '' }}">
+        </label>
+    </div>
+    <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn--primary">Сохранить</button>
+        <a href="{{ url_for('admin.users_list') }}" class="btn btn--ghost">Отмена</a>
+    </div>
+</form>
+{% endblock %}

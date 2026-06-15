@@ -1,0 +1,71 @@
+{% extends "admin/_base.html" %}
+{% block title %}{% if initiative %}Редактирование{% else %}Новая инициатива{% endif %} — InvestMap{% endblock %}
+
+{% block admin_content %}
+<h1>{% if initiative %}Редактировать инициативу{% else %}Новая инициатива{% endif %}</h1>
+
+<form method="post" class="form-stack" style="max-width:none;">
+    <label><span>Название</span>
+        <input type="text" name="title" required value="{{ initiative.title if initiative else '' }}">
+    </label>
+    <label><span>Краткое описание</span>
+        <input type="text" name="short_description" required maxlength="300" value="{{ initiative.short_description if initiative else '' }}">
+    </label>
+    <label><span>Подробное описание</span>
+        <textarea name="description" rows="6" required>{{ initiative.description if initiative else '' }}</textarea>
+    </label>
+
+    <div class="form-row-2">
+        <label><span>Тип автора</span>
+            <select name="author_type">
+                {% for t, l in [('municipality','Муниципалитет'),('ngo','НКО'),('citizen','Гражданин')] %}
+                    <option value="{{ t }}" {% if initiative and initiative.author_type == t %}selected{% endif %}>{{ l }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label><span>Имя автора</span>
+            <input type="text" name="author_name" value="{{ initiative.author_name if initiative else '' }}">
+        </label>
+    </div>
+
+    <div class="form-row-2">
+        <label><span>Район</span>
+            <select name="district">
+                {% for d in DISTRICTS %}
+                    <option value="{{ d }}" {% if initiative and initiative.district == d %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label><span>Статус</span>
+            <select name="status">
+                {% for s, l in [('active','Активна'),('moderation','На модерации'),('funded','Собрана'),('closed','Завершена'),('rejected','Отклонена')] %}
+                    <option value="{{ s }}" {% if initiative and initiative.status == s %}selected{% endif %}>{{ l }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </div>
+
+    <div class="form-row-2">
+        <label><span>Цель сбора, ₽</span>
+            <input type="number" name="goal_amount" min="0" value="{{ initiative.goal_amount if initiative else 0 }}">
+        </label>
+        <label><span>Уже собрано, ₽</span>
+            <input type="number" name="collected_amount" min="0" value="{{ initiative.collected_amount if initiative else 0 }}">
+        </label>
+    </div>
+
+    <div class="form-row-2">
+        <label><span>Широта (lat)</span>
+            <input type="number" step="0.000001" name="lat" value="{{ initiative.lat if initiative and initiative.lat else '' }}">
+        </label>
+        <label><span>Долгота (lng)</span>
+            <input type="number" step="0.000001" name="lng" value="{{ initiative.lng if initiative and initiative.lng else '' }}">
+        </label>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn--primary">Сохранить</button>
+        <a href="{{ url_for('admin.initiatives_list') }}" class="btn btn--ghost">Отмена</a>
+    </div>
+</form>
+{% endblock %}

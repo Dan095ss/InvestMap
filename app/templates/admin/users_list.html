@@ -1,0 +1,33 @@
+{% extends "admin/_base.html" %}
+{% block title %}Пользователи · Админ — InvestMap{% endblock %}
+
+{% block admin_content %}
+<h1>Пользователи ({{ users|length }})</h1>
+<table class="admin-table">
+    <thead><tr><th>Email</th><th>Имя</th><th>Роль</th><th>Тип</th><th>Компания</th><th>Создан</th><th></th></tr></thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td>{{ u.email }}</td>
+            <td>{{ u.name }}</td>
+            <td>
+                {% if u.role == 'admin' %}<span class="chip chip--danger">admin</span>
+                {% elif u.role == 'moderator' %}<span class="chip chip--warning">moderator</span>
+                {% else %}<span class="chip">user</span>{% endif %}
+            </td>
+            <td>{{ u.profile_type }}</td>
+            <td>{{ u.company_name or '—' }}</td>
+            <td class="muted">{{ u.created_at|date_ru }}</td>
+            <td style="display:flex;gap:6px;">
+                <a href="{{ url_for('admin.user_edit', uid=u.id) }}" class="btn btn--ghost btn--sm">✎</a>
+                {% if u.id != current_user.id %}
+                    <form method="post" action="{{ url_for('admin.user_delete', uid=u.id) }}" onsubmit="return confirm('Удалить пользователя {{ u.email }}?')">
+                        <button class="btn btn--danger btn--sm">✕</button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

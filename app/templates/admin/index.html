@@ -1,0 +1,71 @@
+{% extends "admin/_base.html" %}
+{% block title %}Админ-панель — InvestMap{% endblock %}
+
+{% block admin_content %}
+<h1>Обзор</h1>
+
+<div class="stats-grid" style="margin-bottom:24px;">
+    <div class="stat-card"><div class="stat-card__value">{{ counts.projects }}</div><div class="stat-card__label">проектов</div></div>
+    <div class="stat-card"><div class="stat-card__value">{{ counts.initiatives }}</div><div class="stat-card__label">инициатив</div></div>
+    <div class="stat-card"><div class="stat-card__value">{{ counts.users }}</div><div class="stat-card__label">пользователей</div></div>
+    <div class="stat-card" style="{% if counts.moderation %}border-color:#f59e0b;{% endif %}">
+        <div class="stat-card__value" style="color:#f59e0b;">{{ counts.moderation }}</div>
+        <div class="stat-card__label">на модерации</div>
+    </div>
+    <div class="stat-card" style="{% if counts.interests_new %}border-color:#4f46e5;{% endif %}">
+        <div class="stat-card__value" style="color:#4f46e5;">{{ counts.interests_new }}</div>
+        <div class="stat-card__label">новых заявок</div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+    <h3>Инициативы на модерации</h3>
+    {% if pending_initiatives %}
+        <table class="admin-table">
+            <thead><tr><th>Название</th><th>Автор</th><th>Район</th><th>Создано</th><th></th></tr></thead>
+            <tbody>
+                {% for i in pending_initiatives %}
+                <tr>
+                    <td><a href="{{ url_for('initiatives.detail', slug=i.slug) }}">{{ i.title }}</a></td>
+                    <td>{{ i.author_name or '—' }}</td>
+                    <td>{{ i.district }}</td>
+                    <td class="muted">{{ i.created_at|date_ru }}</td>
+                    <td style="display:flex;gap:6px;">
+                        <form method="post" action="{{ url_for('admin.initiative_approve', iid=i.id) }}">
+                            <button class="btn btn--primary btn--sm">Одобрить</button>
+                        </form>
+                        <form method="post" action="{{ url_for('admin.initiative_reject', iid=i.id) }}">
+                            <button class="btn btn--ghost btn--sm">Отклонить</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Нет инициатив на модерации.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Последние заявки инвесторов</h3>
+    {% if recent_interests %}
+        <table class="admin-table">
+            <thead><tr><th>Проект</th><th>Инвестор</th><th>Объём</th><th>Статус</th><th></th></tr></thead>
+            <tbody>
+                {% for it in recent_interests %}
+                <tr>
+                    <td><a href="{{ url_for('projects.detail', slug=it.project.slug) }}">{{ it.project.title }}</a></td>
+                    <td>{{ it.user.company_name or it.user.name }}</td>
+                    <td>{% if it.amount %}{{ it.amount|money }}{% else %}—{% endif %}</td>
+                    <td><span class="chip chip--{% if it.status == 'new' %}info{% elif it.status == 'accepted' %}success{% elif it.status == 'declined' %}danger{% else %}warning{% endif %}">{{ it.status }}</span></td>
+                    <td><a href="{{ url_for('admin.interests_list') }}" class="btn btn--ghost btn--sm">Детали</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">Заявок пока нет.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "admin/_base.html" %}
+{% block title %}Заявки инвесторов — InvestMap{% endblock %}
+
+{% block admin_content %}
+<h1>Заявки инвесторов ({{ interests|length }})</h1>
+
+{% if interests %}
+<table class="admin-table">
+    <thead><tr><th>Проект</th><th>Инвестор</th><th>Объём</th><th>Сообщение</th><th>Контакт</th><th>Статус</th><th>Действие</th></tr></thead>
+    <tbody>
+        {% for it in interests %}
+        <tr>
+            <td><a href="{{ url_for('projects.detail', slug=it.project.slug) }}">{{ it.project.title }}</a></td>
+            <td>
+                <strong>{{ it.user.company_name or it.user.name }}</strong><br>
+                <span class="muted" style="font-size:11px;">{{ it.user.email }}</span>
+            </td>
+            <td>{% if it.amount %}{{ it.amount|money }}{% else %}—{% endif %}</td>
+            <td style="max-width:260px;">{{ it.message }}</td>
+            <td>{{ it.contact or '—' }}</td>
+            <td>
+                {% if it.status == 'new' %}<span class="chip chip--info">Новая</span>
+                {% elif it.status == 'reviewed' %}<span class="chip chip--warning">Рассмотрена</span>
+                {% elif it.status == 'accepted' %}<span class="chip chip--success">Принята</span>
+                {% elif it.status == 'declined' %}<span class="chip chip--danger">Отклонена</span>
+                {% endif %}
+            </td>
+            <td>
+                <form method="post" action="{{ url_for('admin.interest_set_status', iid=it.id) }}" style="display:flex;gap:4px;">
+                    <select name="status" style="padding:4px;font-size:12px;">
+                        <option value="new" {% if it.status == 'new' %}selected{% endif %}>new</option>
+                        <option value="reviewed" {% if it.status == 'reviewed' %}selected{% endif %}>reviewed</option>
+                        <option value="accepted" {% if it.status == 'accepted' %}selected{% endif %}>accepted</option>
+                        <option value="declined" {% if it.status == 'declined' %}selected{% endif %}>declined</option>
+                    </select>
+                    <button class="btn btn--ghost btn--sm">OK</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p class="muted">Заявок пока нет.</p>
+{% endif %}
+{% endblock %}

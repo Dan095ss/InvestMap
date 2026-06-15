@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Личный кабинет — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="cabinet-layout">
+        {% include "cabinet/_nav.html" %}
+        <div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:24px;">
+                <h1 class="cabinet-title" style="margin:0;">Здравствуйте, {{ current_user.name }}!</h1>
+                <a href="{{ url_for('initiatives.new') }}" class="btn btn--primary">
+                    + Предложить инициативу
+                </a>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-card__label">Подписок</div>
+                    <div class="stat-card__value">{{ sub_count }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__label">Действий</div>
+                    <div class="stat-card__value">{{ activity_count }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__label">Голосов</div>
+                    <div class="stat-card__value">{{ votes }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__label">Поддержано</div>
+                    <div class="stat-card__value">{{ donation_sum|money }}</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="mb-2">Достижения</h3>
+                <div class="achievements-grid">
+                    {% for a in achievements %}
+                        <div class="achievement-badge">
+                            <div class="achievement-badge__icon">{{ a.icon }}</div>
+                            <div class="achievement-badge__title">{{ a.title }}</div>
+                            <div class="achievement-badge__desc">{{ a.desc }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="mb-2">Последняя активность</h3>
+                {% if recent %}
+                    <div class="list-group" style="border:none;">
+                        {% for a in recent %}
+                            <div class="list-item" style="border-bottom:1px solid var(--border);">
+                                <div class="list-item__main">
+                                    <div class="list-item__title">
+                                        {% if a.link %}<a href="{{ a.link }}">{{ a.message }}</a>{% else %}{{ a.message }}{% endif %}
+                                    </div>
+                                    <div class="list-item__meta">{{ a.created_at.strftime('%d.%m.%Y %H:%M') }} · {{ a.kind }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">Пока активности нет. Откройте <a href="{{ url_for('main.index') }}">карту</a> и начните с проектов.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

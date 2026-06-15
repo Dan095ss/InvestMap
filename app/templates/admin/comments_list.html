@@ -1,0 +1,55 @@
+{% extends "admin/_base.html" %}
+{% block title %}Комментарии — Админ-панель{% endblock %}
+
+{% block admin_content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+    <h1 style="margin:0;">Комментарии к проектам</h1>
+    <form method="get" style="display:flex;gap:8px;align-items:center;">
+        <select name="project_id" onchange="this.form.submit()"
+                style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;">
+            <option value="">Все проекты</option>
+            {% for p in projects %}
+                <option value="{{ p.id }}" {% if project_filter == p.id %}selected{% endif %}>{{ p.title }}</option>
+            {% endfor %}
+        </select>
+        {% if project_filter %}
+            <a href="{{ url_for('admin.comments_list') }}" class="btn btn--ghost btn--sm">Сбросить</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if comments %}
+<div class="card" style="padding:0;overflow:hidden;">
+    {% for c in comments %}
+    <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;gap:16px;align-items:flex-start;{% if loop.last %}border-bottom:none;{% endif %}{% if c.is_moderator %}background:#fffbeb;{% endif %}">
+        <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+                {% if c.is_moderator %}
+                    <span class="chip chip--warning" style="font-size:11px;">Модератор</span>
+                {% endif %}
+                <strong style="font-size:14px;">{{ c.user.name }}</strong>
+                <span class="muted" style="font-size:12px;">{{ c.created_at|date_ru }}</span>
+                <a href="{{ url_for('projects.detail', slug=c.project.slug) }}" style="font-size:12px;color:#4f46e5;">
+                    {{ c.project.title }}
+                </a>
+            </div>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#334155;">{{ c.body }}</p>
+        </div>
+        <form method="post" action="{{ url_for('admin.comment_delete', cid=c.id) }}"
+              onsubmit="return confirm('Удалить комментарий?');"
+              style="flex-shrink:0;">
+            <input type="hidden" name="back"
+                   value="{{ url_for('admin.comments_list', project_id=project_filter) if project_filter else url_for('admin.comments_list') }}">
+            <button type="submit" class="btn btn--ghost btn--sm"
+                    style="color:#ef4444;border-color:#fca5a5;" title="Удалить">Удалить</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+<p class="muted" style="margin-top:10px;font-size:12px;">Показано до 100 последних комментариев.</p>
+{% else %}
+<div class="card">
+    <p class="muted">Комментариев нет{% if project_filter %} для выбранного проекта{% endif %}.</p>
+</div>
+{% endif %}
+{% endblock %}

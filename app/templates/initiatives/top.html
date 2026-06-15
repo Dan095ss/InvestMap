@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Рейтинг инициатив — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-head">
+        <h1>Рейтинг инициатив</h1>
+        <p class="page-head__lead">Самые поддержанные жителями идеи Приморского края.</p>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:24px;">
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.count }}</div>
+            <div class="stat-card__label">всего инициатив</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.active }}</div>
+            <div class="stat-card__label">активные сейчас</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.funded }}</div>
+            <div class="stat-card__label">полностью профинансированы</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.collected_sum|money }}</div>
+            <div class="stat-card__label">собрано жителями</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value">{{ totals.votes_sum }}</div>
+            <div class="stat-card__label">голосов поддержки</div>
+        </div>
+    </div>
+
+    <div class="top-grid">
+        <section class="top-col">
+            <h3 class="top-col__title">🔥 Популярные по голосам</h3>
+            <ol class="top-list">
+                {% for i in top_votes %}
+                    <li class="top-item">
+                        <a href="{{ url_for('initiatives.detail', slug=i.slug) }}">
+                            <div class="top-item__title">{{ i.title }}</div>
+                            <div class="top-item__meta">
+                                <span class="chip chip--warning">★ {{ i.votes_count }} голосов</span>
+                                <span class="muted">{{ i.district or '—' }}</span>
+                            </div>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="muted">Пока нет данных</li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        <section class="top-col">
+            <h3 class="top-col__title">💰 Больше всего собрано</h3>
+            <ol class="top-list">
+                {% for i in top_collected %}
+                    <li class="top-item">
+                        <a href="{{ url_for('initiatives.detail', slug=i.slug) }}">
+                            <div class="top-item__title">{{ i.title }}</div>
+                            <div class="progress"><div class="progress__bar" style="width:{{ i.progress_pct }}%"></div></div>
+                            <div class="top-item__meta">
+                                <strong>{{ i.collected_amount|money }}</strong>
+                                <span class="muted">из {{ i.goal_amount|money }}</span>
+                            </div>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="muted">Пока нет данных</li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        <section class="top-col">
+            <h3 class="top-col__title">🎯 Ближе всего к цели</h3>
+            <ol class="top-list">
+                {% for i in top_progress %}
+                    <li class="top-item">
+                        <a href="{{ url_for('initiatives.detail', slug=i.slug) }}">
+                            <div class="top-item__title">{{ i.title }}</div>
+                            <div class="progress"><div class="progress__bar" style="width:{{ i.progress_pct }}%"></div></div>
+                            <div class="top-item__meta">
+                                <span class="chip chip--success">{{ i.progress_pct }}%</span>
+                                <span class="muted">{{ i.district or '—' }}</span>
+                            </div>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="muted">Пока нет данных</li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        <section class="top-col">
+            <h3 class="top-col__title">🆕 Новые</h3>
+            <ol class="top-list">
+                {% for i in top_new %}
+                    <li class="top-item">
+                        <a href="{{ url_for('initiatives.detail', slug=i.slug) }}">
+                            <div class="top-item__title">{{ i.title }}</div>
+                            <div class="top-item__meta">
+                                <span class="muted">{{ i.created_at|date_ru }}</span>
+                                <span class="muted">{{ i.district or '—' }}</span>
+                            </div>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="muted">Пока нет данных</li>
+                {% endfor %}
+            </ol>
+        </section>
+    </div>
+
+    <div style="text-align:center;margin-top:28px;">
+        <a href="{{ url_for('initiatives.list_initiatives') }}" class="btn btn--primary">Все инициативы</a>
+    </div>
+</div>
+{% endblock %}

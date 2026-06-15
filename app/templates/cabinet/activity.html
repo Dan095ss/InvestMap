@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}История активности — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="cabinet-layout">
+    {% include "cabinet/_nav.html" %}
+    <div>
+        <h1 class="cabinet-title">История активности</h1>
+        {% if items %}
+            <div class="list-group">
+                {% for a in items %}
+                    <div class="list-item">
+                        <div class="list-item__main">
+                            <div class="list-item__title">
+                                {% if a.link %}<a href="{{ a.link }}">{{ a.message }}</a>{% else %}{{ a.message }}{% endif %}
+                            </div>
+                            <div class="list-item__meta">{{ a.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                        </div>
+                        <span class="chip">{{ a.kind }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">Активности пока нет.</div>
+        {% endif %}
+    </div>
+</div>
+</div>
+{% endblock %}

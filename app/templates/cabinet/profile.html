@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Профиль — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="cabinet-layout">
+        {% include "cabinet/_nav.html" %}
+        <section class="cabinet-content">
+            <div class="form-card" style="max-width: none; margin: 0;">
+                <h1>Профиль пользователя</h1>
+                <p class="muted">Перейдите в режим «Инвестор», чтобы подавать заявки интереса по проектам на карте.</p>
+
+                <form method="post" class="form-stack">
+                    <div class="form-row-2">
+                        <label>
+                            <span>Имя / ФИО</span>
+                            <input type="text" name="name" required value="{{ current_user.name }}">
+                        </label>
+                        <label>
+                            <span>Телефон</span>
+                            <input type="tel" name="phone" value="{{ current_user.phone or '' }}" placeholder="+7 ...">
+                        </label>
+                    </div>
+
+                    <label>
+                        <span>Тип профиля</span>
+                        <select name="profile_type" id="profileType">
+                            <option value="physical" {% if current_user.profile_type == 'physical' %}selected{% endif %}>Физическое лицо</option>
+                            <option value="investor" {% if current_user.profile_type == 'investor' %}selected{% endif %}>Инвестор / юрлицо</option>
+                        </select>
+                    </label>
+
+                    <div id="investorFields" style="{% if current_user.profile_type != 'investor' %}display:none;{% endif %} display: flex; flex-direction: column; gap: 14px;">
+                        <div class="form-row-2">
+                            <label>
+                                <span>Компания</span>
+                                <input type="text" name="company_name" value="{{ current_user.company_name or '' }}" placeholder="ООО «…»">
+                            </label>
+                            <label>
+                                <span>ИНН</span>
+                                <input type="text" name="inn" value="{{ current_user.inn or '' }}" placeholder="10 или 12 цифр">
+                            </label>
+                        </div>
+                    </div>
+
+                    <label>
+                        <span>О себе / О компании</span>
+                        <textarea name="bio" rows="4" placeholder="Сфера интересов, опыт, портфель…">{{ current_user.bio or '' }}</textarea>
+                    </label>
+
+                    <label style="flex-direction:row;align-items:center;gap:10px;">
+                        <input type="checkbox" name="email_notifications" value="1" {% if current_user.email_notifications %}checked{% endif %}>
+                        <span>Получать email-уведомления ({{ current_user.email }})</span>
+                    </label>
+
+                    <div style="display:flex;gap:10px;margin-top:10px;">
+                        <button type="submit" class="btn btn--primary">Сохранить</button>
+                        <a href="{{ url_for('cabinet.index') }}" class="btn btn--ghost">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const sel = document.getElementById("profileType");
+    const box = document.getElementById("investorFields");
+    function toggle() { box.style.display = sel.value === "investor" ? "flex" : "none"; }
+    sel.addEventListener("change", toggle);
+    toggle();
+})();
+</script>
+{% endblock %}

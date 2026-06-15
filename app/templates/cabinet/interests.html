@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Мои заявки инвестора — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="cabinet-layout">
+        {% include "cabinet/_nav.html" %}
+        <section class="cabinet-content">
+            <h1>Мои инвестиционные заявки</h1>
+            {% if items %}
+                <div class="activity-list">
+                    {% for i in items %}
+                    <div class="activity-item">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+                            <div>
+                                <div style="font-weight:600;">
+                                    <a href="{{ url_for('projects.detail', slug=i.project.slug) }}">{{ i.project.title }}</a>
+                                </div>
+                                <div class="muted" style="font-size:12px;">{{ i.created_at|date_ru }}</div>
+                            </div>
+                            <span class="chip {% if i.status == 'new' %}chip--info{% elif i.status == 'accepted' %}chip--success{% elif i.status == 'declined' %}chip--danger{% else %}chip--warning{% endif %}">
+                                {% if i.status == 'new' %}Новая
+                                {% elif i.status == 'reviewed' %}Рассмотрена
+                                {% elif i.status == 'accepted' %}Принята
+                                {% elif i.status == 'declined' %}Отклонена
+                                {% else %}{{ i.status }}{% endif %}
+                            </span>
+                        </div>
+                        {% if i.amount %}<div style="margin-top:6px;"><strong>Объём:</strong> {{ i.amount|money }}</div>{% endif %}
+                        <p style="margin:8px 0 0;font-size:14px;">{{ i.message }}</p>
+                        {% if i.contact %}<p class="muted" style="font-size:12px;margin:4px 0 0;">Контакт: {{ i.contact }}</p>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">Пока нет заявок.<br>Найдите интересный проект на карте и заявите об интересе.</div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

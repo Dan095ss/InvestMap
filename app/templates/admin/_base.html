@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block main_class %}main--admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-layout">
+        <aside class="admin-nav">
+            <h3>Админ-панель</h3>
+            <a href="{{ url_for('admin.index') }}" class="{% if request.endpoint == 'admin.index' %}active{% endif %}">Обзор</a>
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('admin.projects_list') }}" class="{% if 'admin.project' in request.endpoint %}active{% endif %}">Проекты</a>
+            {% endif %}
+            <a href="{{ url_for('admin.initiatives_list') }}" class="{% if 'admin.initiative' in request.endpoint %}active{% endif %}">Инициативы</a>
+            <a href="{{ url_for('admin.interests_list') }}" class="{% if 'admin.interest' in request.endpoint %}active{% endif %}">Заявки инвесторов</a>
+            <a href="{{ url_for('admin.comments_list') }}" class="{% if 'admin.comment' in request.endpoint %}active{% endif %}">Комментарии</a>
+            <a href="{{ url_for('admin.tickets_list') }}" class="{% if 'admin.ticket' in request.endpoint %}active{% endif %}">
+                Поддержка
+                {% set open_tickets = open_tickets_count|default(0) %}
+                {% if open_tickets %}<span class="badge" style="background:#f59e0b;color:#fff;font-size:10px;padding:1px 6px;border-radius:99px;margin-left:4px;">{{ open_tickets }}</span>{% endif %}
+            </a>
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('admin.users_list') }}" class="{% if 'admin.user' in request.endpoint %}active{% endif %}">Пользователи</a>
+            {% endif %}
+            <div class="divider"></div>
+            <a href="{{ url_for('cabinet.index') }}">← в личный кабинет</a>
+        </aside>
+        <section class="admin-content">
+            {% block admin_content %}{% endblock %}
+        </section>
+    </div>
+</div>
+{% endblock %}

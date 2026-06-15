@@ -1,0 +1,83 @@
+{% extends "admin/_base.html" %}
+{% block title %}Тикеты поддержки — Админ-панель{% endblock %}
+
+{% block admin_content %}
+<h1>Тикеты поддержки</h1>
+
+<div class="stats-grid" style="margin-bottom:20px;">
+    <div class="stat-card" style="{% if not status_filter %}border-color:#4f46e5;{% endif %}">
+        <div class="stat-card__value">{{ counts.open + counts.answered + counts.closed }}</div>
+        <div class="stat-card__label"><a href="{{ url_for('admin.tickets_list') }}" style="color:inherit;text-decoration:none;">Всего</a></div>
+    </div>
+    <div class="stat-card" style="{% if status_filter == 'open' %}border-color:#f59e0b;{% endif %}">
+        <div class="stat-card__value" style="color:#f59e0b;">{{ counts.open }}</div>
+        <div class="stat-card__label"><a href="{{ url_for('admin.tickets_list', status='open') }}" style="color:inherit;text-decoration:none;">Открытых</a></div>
+    </div>
+    <div class="stat-card" style="{% if status_filter == 'answered' %}border-color:#16a34a;{% endif %}">
+        <div class="stat-card__value" style="color:#16a34a;">{{ counts.answered }}</div>
+        <div class="stat-card__label"><a href="{{ url_for('admin.tickets_list', status='answered') }}" style="color:inherit;text-decoration:none;">Отвечено</a></div>
+    </div>
+    <div class="stat-card" style="{% if status_filter == 'closed' %}border-color:#94a3b8;{% endif %}">
+        <div class="stat-card__value" style="color:#94a3b8;">{{ counts.closed }}</div>
+        <div class="stat-card__label"><a href="{{ url_for('admin.tickets_list', status='closed') }}" style="color:inherit;text-decoration:none;">Закрытых</a></div>
+    </div>
+</div>
+
+{% if tickets %}
+<div class="card" style="padding:0;overflow:hidden;">
+    {% for t in tickets %}
+    <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;{% if loop.last %}border-bottom:none;{% endif %}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span class="chip chip--{% if t.status == 'open' %}warning{% elif t.status == 'answered' %}success{% else %}default{% endif %}">
+                        {{ {'open':'Открыт','answered':'Отвечен','closed':'Закрыт'}.get(t.status, t.status) }}
+                    </span>
+                    <strong style="font-size:15px;">{{ t.subject }}</strong>
+                </div>
+                <div class="muted" style="font-size:12px;margin-bottom:8px;">
+                    {{ t.user.name }} ({{ t.user.email }}) · {{ t.created_at|date_ru }}
+                    {% if t.answered_at %} · ответ {{ t.answered_at|date_ru }}{% endif %}
+                </div>
+                <div style="background:#f8fafc;border-radius:6px;padding:10px 14px;font-size:13px;line-height:1.6;margin-bottom:8px;">
+                    {{ t.body }}
+                </div>
+                {% if t.reply %}
+                <div style="background:#f0fdf4;border-left:3px solid #16a34a;border-radius:0 6px 6px 0;padding:10px 14px;font-size:13px;line-height:1.6;color:#166534;">
+                    <strong>Ответ:</strong> {{ t.reply }}
+                </div>
+                {% endif %}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;min-width:180px;">
+                {% if t.status != 'closed' %}
+                <details style="width:100%;">
+                    <summary class="btn btn--primary btn--sm" style="cursor:pointer;list-style:none;text-align:center;display:block;">
+                        {{ 'Изменить ответ' if t.reply else 'Ответить' }}
+                    </summary>
+                    <div style="margin-top:8px;">
+                        <form method="post" action="{{ url_for('admin.ticket_reply', tid=t.id) }}">
+                            <textarea name="reply" rows="4" placeholder="Текст ответа…" style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;resize:vertical;">{{ t.reply or '' }}</textarea>
+                            <button type="submit" class="btn btn--primary btn--sm" style="margin-top:6px;width:100%;">Отправить</button>
+                        </form>
+                    </div>
+                </details>
+                <form method="post" action="{{ url_for('admin.ticket_close', tid=t.id) }}"
+                      onsubmit="return confirm('Закрыть тикет?');">
+                    <button type="submit" class="btn btn--ghost btn--sm" style="width:100%;">Закрыть</button>
+                </form>
+                {% else %}
+                <span class="muted" style="font-size:12px;text-align:center;">Закрыт</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <p class="muted">Нет тикетов
+    {% if status_filter %}с фильтром «{{ status_filter }}»{% endif %}.
+    <a href="{{ url_for('admin.tickets_list') }}">Показать все</a></p>
+</div>
+{% endif %}
+{% endblock %}

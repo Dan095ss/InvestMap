@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Чат с поддержкой — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="cabinet-layout">
+    {% include "cabinet/_nav.html" %}
+    <div>
+        <h1 class="cabinet-title">Чат с поддержкой</h1>
+
+        <div class="card mb-3">
+            <h3 class="mb-2">Новое обращение</h3>
+            <form method="post">
+                <div class="form-row">
+                    <label>Тема</label>
+                    <input type="text" name="subject" required maxlength="200" placeholder="Кратко опишите суть">
+                </div>
+                <div class="form-row">
+                    <label>Сообщение</label>
+                    <textarea name="body" rows="4" required placeholder="Опишите проблему или вопрос…"></textarea>
+                </div>
+                <button class="btn btn--primary" type="submit">Отправить</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 class="mb-2">История обращений</h3>
+            {% if tickets %}
+                {% for t in tickets %}
+                    <div class="list-item" style="flex-direction:column;align-items:stretch;border-bottom:1px solid var(--border);">
+                        <div class="flex-between">
+                            <div class="list-item__title">{{ t.subject }}</div>
+                            <span class="chip {% if t.status == 'answered' %}chip--success{% elif t.status == 'closed' %}chip--info{% else %}chip--warning{% endif %}">
+                                {% if t.status == 'open' %}Открыто{% elif t.status == 'answered' %}Отвечено{% else %}Закрыто{% endif %}
+                            </span>
+                        </div>
+                        <div class="muted" style="font-size:13px;margin:6px 0;">{{ t.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                        <div style="white-space:pre-line;margin-bottom:8px;">{{ t.body }}</div>
+                        {% if t.reply %}
+                            <div class="comment comment--mod">
+                                <div class="comment__avatar">ТП</div>
+                                <div class="comment__body">
+                                    <div class="comment__head">
+                                        <span class="comment__author">Служба поддержки</span>
+                                        <span class="comment__time">{{ t.answered_at.strftime('%d.%m.%Y %H:%M') if t.answered_at }}</span>
+                                    </div>
+                                    <div class="comment__text">{{ t.reply }}</div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">Обращений пока нет.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Инициативы — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+        <div>
+            <h1>Инициативы и краудфандинг</h1>
+            <p class="page-head__lead">Локальные проекты от муниципалитета, НКО и жителей. Голосуйте и поддерживайте.</p>
+        </div>
+        <div style="display:flex;gap:10px;">
+            <a href="{{ url_for('initiatives.top') }}" class="btn btn--ghost">🏆 Рейтинг</a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('initiatives.new') }}" class="btn btn--primary">+ Предложить инициативу</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn--primary">Войти, чтобы предложить</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <form class="filters-bar" method="get">
+        <select name="district">
+            <option value="">Все районы</option>
+            {% for d in DISTRICTS %}
+                <option value="{{ d }}" {% if selected.district == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+        <select name="status">
+            <option value="">Любой статус</option>
+            <option value="active" {% if selected.status == 'active' %}selected{% endif %}>Активные</option>
+            <option value="funded" {% if selected.status == 'funded' %}selected{% endif %}>Собранные</option>
+            <option value="closed" {% if selected.status == 'closed' %}selected{% endif %}>Завершённые</option>
+        </select>
+        <select name="sort">
+            <option value="new" {% if selected.sort == 'new' %}selected{% endif %}>Сначала новые</option>
+            <option value="popular" {% if selected.sort == 'popular' %}selected{% endif %}>По голосам</option>
+            <option value="funded" {% if selected.sort == 'funded' %}selected{% endif %}>Больше собрано</option>
+            <option value="views" {% if selected.sort == 'views' %}selected{% endif %}>По охвату (просмотры)</option>
+        </select>
+        <button class="btn btn--primary" type="submit">Применить</button>
+        <a class="btn btn--ghost" href="{{ url_for('initiatives.list_initiatives') }}">Сброс</a>
+    </form>
+
+    {% if initiatives %}
+    <div class="cards-grid">
+        {% for i in initiatives %}
+            <a class="initiative-card" href="{{ url_for('initiatives.detail', slug=i.slug) }}">
+                <div class="initiative-card__cover">
+                    {% if i.cover %}<img src="{{ i.cover }}" alt="">{% endif %}
+                </div>
+                <div class="initiative-card__body">
+                    <div class="initiative-card__title">{{ i.title }}</div>
+                    <div class="initiative-card__desc">{{ i.short_description }}</div>
+                    <div class="progress"><div class="progress__bar" style="width:{{ i.progress_pct }}%"></div></div>
+                    <div class="progress-stats">
+                        <span><strong>{{ i.collected_amount|money }}</strong> из {{ i.goal_amount|money }}</span>
+                        <span>{{ i.progress_pct }}%</span>
+                    </div>
+                    <div class="initiative-card__footer">
+                        <span class="initiative-card__source
+                            {% if i.author_type == 'municipality' %}initiative-card__source--blue
+                            {% elif i.author_type == 'ngo' %}initiative-card__source--green
+                            {% else %}initiative-card__source--orange{% endif %}">
+                            {% if i.author_type == 'municipality' %}🏛️{% elif i.author_type == 'ngo' %}🤝{% else %}👤{% endif %}
+                            {{ i.district or '—' }}
+                        </span>
+                        <span class="initiative-card__stats">
+                            <span title="Голоса">★ {{ i.votes_count }}</span>
+                            <span title="Просмотры" class="muted">👁 {{ i.views }}</span>
+                        </span>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                    <form method="post" action="{{ url_for('initiatives.favorite', slug=i.slug) }}" class="initiative-card__fav">
+                        <input type="hidden" name="next" value="{{ request.url }}">
+                        <button type="submit" class="btn-fav {% if i.id in favorited_ids %}btn-fav--active{% endif %}"
+                                title="{% if i.id in favorited_ids %}Убрать из избранного{% else %}В избранное{% endif %}">
+                            {% if i.id in favorited_ids %}★{% else %}☆{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="empty-state">Инициатив по фильтру не найдено.</div>
+    {% endif %}
+</div>
+{% endblock %}

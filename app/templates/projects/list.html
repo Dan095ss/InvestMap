@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Проекты — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-head">
+        <h1>Инвестиционные проекты</h1>
+        <p class="page-head__lead">{{ projects|length }} проектов · фильтры по типу, статусу и району</p>
+    </div>
+
+    <form class="filters-bar" method="get">
+        <input type="search" name="q" placeholder="Поиск…" value="{{ selected.q or '' }}">
+        <select name="type">
+            <option value="">Любой тип</option>
+            {% for code, label in PROJECT_TYPES %}
+                <option value="{{ code }}" {% if selected.type == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="status">
+            <option value="">Любой статус</option>
+            {% for code, label in PROJECT_STATUSES %}
+                <option value="{{ code }}" {% if selected.status == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="district">
+            <option value="">Все районы</option>
+            {% for d in DISTRICTS %}
+                <option value="{{ d }}" {% if selected.district == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn--primary" type="submit">Применить</button>
+        <a class="btn btn--ghost" href="{{ url_for('projects.list_projects') }}">Сброс</a>
+    </form>
+
+    {% if projects %}
+    <div class="cards-grid">
+        {% for p in projects %}
+            {% set type_label = (PROJECT_TYPES | selectattr('0', 'equalto', p.type) | map(attribute='1') | first) or p.type %}
+            {% set status_label = (PROJECT_STATUSES | selectattr('0', 'equalto', p.status) | map(attribute='1') | first) or p.status %}
+            <a class="project-card" href="{{ url_for('projects.detail', slug=p.slug) }}">
+                <div class="project-card__cover" data-type="{{ p.type }}">
+                    {% if p.cover %}
+                        <img src="{{ p.cover }}" alt="">
+                    {% else %}
+                        <span class="project-card__initial">{{ p.title[:1] }}</span>
+                    {% endif %}
+                    <div class="project-card__chips">
+                        <span class="chip chip--primary">{{ type_label }}</span>
+                        <span class="chip
+                            {% if p.status == 'completed' %}chip--success
+                            {% elif p.status == 'in_progress' %}chip--warning
+                            {% elif p.status == 'paused' %}chip--danger
+                            {% else %}chip--info{% endif %}">{{ status_label }}</span>
+                    </div>
+                </div>
+                <div class="project-card__body">
+                    <div class="project-card__title">{{ p.title }}</div>
+                    <div class="project-card__desc">{{ p.short_description }}</div>
+                    <div class="project-card__meta">
+                        <span>{{ p.district }}</span>
+                        {% if p.budget %}<span>{{ p.budget|money }}</span>{% endif %}
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="empty-state">Проектов по заданным фильтрам не найдено.</div>
+    {% endif %}
+</div>
+{% endblock %}

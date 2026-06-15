@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Предложить инициативу — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-card">
+        <h1>Предложить инициативу</h1>
+        <p class="muted">Расскажите о проблеме или идее для вашего района. После проверки модератором инициатива появится на карте и начнётся сбор поддержки.</p>
+
+        <form method="post" class="form-stack">
+            <label>
+                <span>Название</span>
+                <input type="text" name="title" required minlength="5" maxlength="200" value="{{ form.title or '' }}" placeholder="Например: Освещение парка у набережной">
+            </label>
+
+            <label>
+                <span>Краткое описание</span>
+                <input type="text" name="short_description" required minlength="10" maxlength="300" value="{{ form.short_description or '' }}" placeholder="Одним предложением — в чём суть">
+            </label>
+
+            <label>
+                <span>Подробное описание</span>
+                <textarea name="description" rows="6" required minlength="30" placeholder="Опишите проблему, предлагаемое решение и ожидаемый эффект…">{{ form.description or '' }}</textarea>
+            </label>
+
+            <div class="form-row-2">
+                <label>
+                    <span>Район</span>
+                    <select name="district" required>
+                        <option value="">Выберите…</option>
+                        {% for d in DISTRICTS %}
+                            <option value="{{ d }}" {% if form.district == d %}selected{% endif %}>{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label>
+                    <span>Цель сбора, ₽</span>
+                    <input type="number" name="goal_amount" min="1000" step="1000" required value="{{ form.goal_amount or 100000 }}">
+                </label>
+            </div>
+
+            <div>
+                <span style="display:block;margin-bottom:8px;font-weight:500;">Точка на карте</span>
+                <div id="pickMap" style="height:320px;border-radius:var(--radius);border:1px solid var(--border);"></div>
+                <p class="muted" style="margin:6px 0 0;font-size:12px;">Кликните по карте, чтобы поставить точку инициативы.</p>
+                <input type="hidden" name="lat" id="latInput" value="{{ form.lat or '' }}">
+                <input type="hidden" name="lng" id="lngInput" value="{{ form.lng or '' }}">
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button type="submit" class="btn btn--primary">Отправить на модерацию</button>
+                <a href="{{ url_for('initiatives.list_initiatives') }}" class="btn btn--ghost">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const map = L.map("pickMap").setView([43.1155, 131.8855], 9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OSM" }).addTo(map);
+
+    let marker = null;
+    const latInp = document.getElementById("latInput");
+    const lngInp = document.getElementById("lngInput");
+
+    function placeMarker(lat, lng) {
+        if (marker) marker.setLatLng([lat, lng]);
+        else marker = L.marker([lat, lng], { draggable: true }).addTo(map)
+                .on("dragend", e => {
+                    const p = e.target.getLatLng();
+                    latInp.value = p.lat.toFixed(6);
+                    lngInp.value = p.lng.toFixed(6);
+                });
+        latInp.value = lat.toFixed(6);
+        lngInp.value = lng.toFixed(6);
+    }
+
+    map.on("click", e => placeMarker(e.latlng.lat, e.latlng.lng));
+
+    if (latInp.value && lngInp.value) {
+        placeMarker(parseFloat(latInp.value), parseFloat(lngInp.value));
+    }
+})();
+</script>
+{% endblock %}

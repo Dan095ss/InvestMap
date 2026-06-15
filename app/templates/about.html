@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}О портале — InvestMap{% endblock %}
+
+{% block content %}
+<section class="landing-hero">
+    <div class="container">
+        <h1>Инвестиционная карта региона</h1>
+        <p class="landing-hero__lead">
+            Открытая платформа, где жители, бизнес и муниципалитет видят,
+            что и где строится, обсуждают проекты и поддерживают локальные инициативы.
+        </p>
+        <div class="landing-hero__cta">
+            <a class="btn btn--primary btn--lg" href="{{ url_for('main.index') }}">Открыть карту</a>
+            <a class="btn btn--ghost btn--lg" href="{{ url_for('initiatives.list_initiatives') }}">Инициативы</a>
+        </div>
+    </div>
+</section>
+
+<section class="container" style="padding: 48px 0 64px;">
+    <div class="cards-grid">
+        <div class="card">
+            <h3>Интерактивная карта</h3>
+            <p class="muted">Все инвестпроекты города — с фильтрами по типу, статусу и району. Клик по маркеру открывает подробную карточку.</p>
+        </div>
+        <div class="card">
+            <h3>Карточка проекта</h3>
+            <p class="muted">Описание, сроки, ответственные, медиа, таймлайн реализации, вакансии для соискателей и чат с модератором.</p>
+        </div>
+        <div class="card">
+            <h3>Инициативы и краудфандинг</h3>
+            <p class="muted">Муниципалитет и НКО публикуют локальные инициативы. Жители голосуют, собирают средства и следят за прогрессом.</p>
+        </div>
+        <div class="card">
+            <h3>Личный кабинет</h3>
+            <p class="muted">Подписки на проекты и районы, уведомления, история активности, связь с техподдержкой.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

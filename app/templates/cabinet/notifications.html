@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Уведомления — InvestMap{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="cabinet-layout">
+    {% include "cabinet/_nav.html" %}
+    <div>
+        <div class="flex-between mb-2">
+            <h1 class="cabinet-title mb-0">Уведомления</h1>
+            {% if items %}
+                <form method="post" action="{{ url_for('cabinet.read_all_notifications') }}">
+                    <button class="btn btn--ghost btn--sm" type="submit">Прочитать всё</button>
+                </form>
+            {% endif %}
+        </div>
+
+        {% if items %}
+            <div class="list-group">
+                {% for n in items %}
+                    <div class="list-item {% if not n.is_read %}unread{% endif %}">
+                        <div class="list-item__main">
+                            <div class="list-item__title">
+                                {% if n.link %}
+                                    <form method="post" action="{{ url_for('cabinet.read_notification', note_id=n.id) }}" style="display:inline;">
+                                        <button type="submit" style="all:unset;cursor:pointer;color:var(--primary);font-weight:600;">{{ n.title }}</button>
+                                    </form>
+                                {% else %}
+                                    {{ n.title }}
+                                {% endif %}
+                            </div>
+                            {% if n.body %}<div class="muted" style="font-size:13px;">{{ n.body }}</div>{% endif %}
+                            <div class="list-item__meta">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                        </div>
+                        {% if not n.is_read %}<span class="chip chip--primary">Новое</span>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">Уведомлений нет. Подпишитесь на проекты, чтобы получать обновления.</div>
+        {% endif %}
+    </div>
+</div>
+</div>
+{% endblock %}

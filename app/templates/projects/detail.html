@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }} — InvestMap{% endblock %}
+
+{% block content %}
+{% set type_label = (PROJECT_TYPES | selectattr('0', 'equalto', project.type) | map(attribute='1') | first) or project.type %}
+{% set status_label = (PROJECT_STATUSES | selectattr('0', 'equalto', project.status) | map(attribute='1') | first) or project.status %}
+
+<section class="project-hero">
+    <div class="container">
+        <div class="breadcrumbs">
+            <a href="{{ url_for('main.index') }}">Карта</a> /
+            <a href="{{ url_for('projects.list_projects') }}">Проекты</a> /
+            <span>{{ project.title }}</span>
+        </div>
+        <div class="project-hero__chips">
+            <span class="chip chip--primary">{{ type_label }}</span>
+            <span class="chip
+                {% if project.status == 'completed' %}chip--success
+                {% elif project.status == 'in_progress' %}chip--warning
+                {% elif project.status == 'paused' %}chip--danger
+                {% else %}chip--info{% endif %}">{{ status_label }}</span>
+            <span class="chip">{{ project.district }}</span>
+        </div>
+        <h1>{{ project.title }}</h1>
+        <p class="project-hero__lead">{{ project.short_description }}</p>
+        <div class="project-hero__actions">
+            {% if current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('projects.subscribe', slug=project.slug) }}">
+                    <button class="btn {% if is_subscribed %}btn--ghost{% else %}btn--primary{% endif %}">
+                        {% if is_subscribed %}Вы подписаны ✓{% else %}Подписаться на проект{% endif %}
+                    </button>
+                </form>
+            {% else %}
+                <a class="btn btn--primary" href="{{ url_for('auth.login') }}">Подписаться</a>
+            {% endif %}
+            <a class="btn btn--ghost" href="#comments">Обсуждение ({{ project.comments|length }})</a>
+            {% if current_user.is_authenticated and current_user.is_investor %}
+                <a class="btn btn--ghost" href="#interest">💼 Заявить интерес</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<div class="container">
+<div class="project-layout">
+    <div>
+        <section class="card">
+            <h2 class="project-section-title">О проекте</h2>
+            {% if project.goal %}
+                <p><strong>Цель:</strong> {{ project.goal }}</p>
+            {% endif %}
+            <p style="white-space: pre-line;">{{ project.description }}</p>
+        </section>
+
+        {% if project.media or (current_user.is_authenticated and current_user.is_moderator) %}
+        <section class="card">
+            <h2 class="project-section-title">Медиа и документы</h2>
+            {% if project.media %}
+            <div class="media-gallery">
+                {% for m in project.media %}
+                    {% if m.kind == 'photo' %}
+                        <div class="media-item" title="{{ m.caption or '' }}" style="position:relative;">
+                            <img src="{{ m.url }}" alt="{{ m.caption or '' }}">
+                            {% if current_user.is_authenticated and current_user.is_moderator %}
+                                <form method="post" action="{{ url_for('projects.delete_media', slug=project.slug, media_id=m.id) }}" style="position:absolute;top:4px;right:4px;">
+                                    <button type="submit" class="btn btn--danger btn--sm" onclick="return confirm('Удалить файл?')" style="padding:2px 8px;font-size:11px;">×</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="media-item" style="position:relative;">
+                            <a href="{{ m.url }}" target="_blank" style="display:block;height:100%;">
+                                <div class="media-item__doc">
+                                    📄<br><strong>{{ m.caption or 'Документ' }}</strong>
+                                </div>
+                            </a>
+                            {% if current_user.is_authenticated and current_user.is_moderator %}
+                                <form method="post" action="{{ url_for('projects.delete_media', slug=project.slug, media_id=m.id) }}" style="position:absolute;top:4px;right:4px;">
+                                    <button type="submit" class="btn btn--danger btn--sm" onclick="return confirm('Удалить файл?')" style="padding:2px 8px;font-size:11px;">×</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% else %}
+                <p class="muted">Медиа пока не загружены.</p>
+            {% endif %}
+
+            {% if current_user.is_authenticated and current_user.is_moderator %}
+                <form method="post" action="{{ url_for('projects.upload_media', slug=project.slug) }}" enctype="multipart/form-data" style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <input type="file" name="file" required accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="flex:1;min-width:200px;">
+                    <input type="text" name="caption" placeholder="Подпись (необязательно)" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;">
+                    <button type="submit" class="btn btn--primary btn--sm">Загрузить</button>
+                </form>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        {% if project.timeline %}
+        <section class="card">
+            <h2 class="project-section-title">Таймлайн реализации</h2>
+            <div class="timeline">
+                {% for e in project.timeline %}
+                    <div class="timeline__item {{ e.status }}">
+                        <div class="timeline__date">{{ e.date|date_ru }}</div>
+                        <div class="timeline__title">{{ e.title }}</div>
+                        {% if e.description %}<div class="timeline__desc">{{ e.description }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="card">
+            <h2 class="project-section-title">Вакансии</h2>
+            {% if project.open_jobs %}
+                {% for j in project.open_jobs %}
+                    <div class="job-card">
+                        <div class="job-card__head">
+                            <div class="job-card__title">{{ j.title }}</div>
+                            <div class="job-card__salary">
+                                {% if j.salary_min and j.salary_max %}
+                                    {{ j.salary_min|money }} — {{ j.salary_max|money }}
+                                {% elif j.salary_min %}от {{ j.salary_min|money }}
+                                {% elif j.salary_max %}до {{ j.salary_max|money }}
+                                {% else %}По договорённости{% endif %}
+                            </div>
+                        </div>
+                        <div class="job-card__req">{{ j.requirements }}</div>
+                        {% if j.contact %}
+                        <div class="job-card__contact" style="margin-top:8px;font-size:0.88rem;color:var(--text-muted,#666);">
+                            <span>Откликнуться:</span>
+                            <strong style="color:var(--text);">{{ j.contact }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="muted">Открытых вакансий нет.</p>
+            {% endif %}
+        </section>
+
+        <section class="card" id="interest">
+            <h2 class="project-section-title">Инвестировать в проект</h2>
+            {% if current_user.is_authenticated and current_user.is_investor %}
+                <p class="muted">Оставьте заявку интереса — администрация проекта свяжется с вами.</p>
+                <form method="post" action="{{ url_for('projects.submit_interest', slug=project.slug) }}" class="form-stack">
+                    <div class="form-row-2">
+                        <label>
+                            <span>Предполагаемый объём, ₽ (необязательно)</span>
+                            <input type="number" name="amount" min="0" step="100000" placeholder="например, 5 000 000">
+                        </label>
+                        <label>
+                            <span>Контакт для связи (email/телефон)</span>
+                            <input type="text" name="contact" placeholder="necessary@invest.ru">
+                        </label>
+                    </div>
+                    <label>
+                        <span>Сообщение</span>
+                        <textarea name="message" rows="4" minlength="20" required placeholder="Кратко опишите, какую форму участия вы рассматриваете…"></textarea>
+                    </label>
+                    <div>
+                        <button type="submit" class="btn btn--primary">Отправить заявку</button>
+                    </div>
+                </form>
+            {% elif current_user.is_authenticated %}
+                <p class="muted">Заявки интереса могут подавать инвесторы. <a href="{{ url_for('cabinet.profile') }}">Переключить профиль на «Инвестор»</a>.</p>
+            {% else %}
+                <p class="muted"><a href="{{ url_for('auth.login') }}">Войдите</a> в профиль инвестора, чтобы заявить интерес.</p>
+            {% endif %}
+        </section>
+
+        <section class="card" id="comments">
+            <h2 class="project-section-title">Обсуждение</h2>
+            {% if current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('projects.post_comment', slug=project.slug) }}" class="mb-2">
+                    <div class="form-row">
+                        <textarea name="body" rows="3" placeholder="Напишите комментарий…" required></textarea>
+                    </div>
+                    <button class="btn btn--primary" type="submit">Отправить</button>
+                </form>
+            {% else %}
+                <p class="muted"><a href="{{ url_for('auth.login') }}">Войдите</a>, чтобы оставить комментарий.</p>
+            {% endif %}
+
+            {% if project.comments %}
+                <div class="comments">
+                    {% for c in project.comments %}
+                        <div class="comment {% if c.is_moderator %}comment--mod{% endif %}">
+                            <div class="comment__avatar">{{ c.user.name[:1]|upper }}</div>
+                            <div class="comment__body">
+                                <div class="comment__head">
+                                    <span class="comment__author">{{ c.user.name }}</span>
+                                    {% if c.is_moderator %}<span class="chip chip--primary">Модератор</span>{% endif %}
+                                    <span class="comment__time">{{ c.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                                </div>
+                                <div class="comment__text">{{ c.body }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">Комментариев пока нет. Будьте первым!</div>
+            {% endif %}
+        </section>
+    </div>
+
+    <aside>
+        <div class="card project-meta-card">
+            <h3 class="mb-2">Сведения</h3>
+            <div class="meta-row">
+                <span class="meta-row__label">Район</span>
+                <span class="meta-row__value">{{ project.district }}</span>
+            </div>
+            {% if project.address %}
+            <div class="meta-row">
+                <span class="meta-row__label">Адрес</span>
+                <span class="meta-row__value">{{ project.address }}</span>
+            </div>
+            {% endif %}
+            {% if project.start_date %}
+            <div class="meta-row">
+                <span class="meta-row__label">Начало</span>
+                <span class="meta-row__value">{{ project.start_date|date_ru }}</span>
+            </div>
+            {% endif %}
+            {% if project.end_date %}
+            <div class="meta-row">
+                <span class="meta-row__label">Завершение</span>
+                <span class="meta-row__value">{{ project.end_date|date_ru }}</span>
+            </div>
+            {% endif %}
+            {% if project.budget %}
+            <div class="meta-row">
+                <span class="meta-row__label">Бюджет</span>
+                <span class="meta-row__value">{{ project.budget|money }}</span>
+            </div>
+            {% endif %}
+            {% if project.responsible %}
+            <div class="meta-row">
+                <span class="meta-row__label">Ответственные</span>
+                <span class="meta-row__value">{{ project.responsible }}</span>
+            </div>
+            {% endif %}
+            <div class="meta-row">
+                <span class="meta-row__label">Координаты</span>
+                <span class="meta-row__value">{{ '%.4f'|format(project.lat) }}, {{ '%.4f'|format(project.lng) }}</span>
+            </div>
+
+            <div class="divider"></div>
+
+            <div id="miniMap" style="height:200px;border-radius:10px;overflow:hidden;"></div>
+        </div>
+    </aside>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const miniMap = L.map('miniMap', { zoomControl: false, attributionControl: false })
+        .setView([{{ project.lat }}, {{ project.lng }}], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+    L.marker([{{ project.lat }}, {{ project.lng }}]).addTo(miniMap);
+</script>
+{% endblock %}

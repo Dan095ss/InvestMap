@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Карта инвестиционных проектов — InvestMap{% endblock %}
+{% block main_class %}main--map{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+{% endblock %}
+
+{% block content %}
+<div class="map-layout">
+    <aside class="map-sidebar" id="sidebar">
+        <h2>Карта проектов</h2>
+        <p class="map-sidebar__meta">
+            <strong id="resultCount">{{ project_count }}</strong> проектов на карте ·
+            <strong>{{ initiative_count }}</strong> инициатив ·
+            собрано <strong>{{ total_raised|money }}</strong>
+        </p>
+
+        <div class="form-row">
+            <input type="search" id="searchInput" placeholder="Поиск по названию и описанию…">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-group__label">Тип проекта</label>
+            <div class="filter-pills" data-filter="type">
+                {% for code, label in PROJECT_TYPES %}
+                    <button type="button" class="filter-pill" data-value="{{ code }}">{{ label }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-group__label">Статус</label>
+            <div class="filter-pills" data-filter="status">
+                {% for code, label in PROJECT_STATUSES %}
+                    <button type="button" class="filter-pill" data-value="{{ code }}">{{ label }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-group__label">Район</label>
+            <select id="districtSelect">
+                <option value="">Все районы</option>
+                {% for d in DISTRICTS %}
+                    <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-group__label">Показывать</label>
+            <div class="filter-pills" data-filter="layer">
+                <button type="button" class="filter-pill active" data-value="projects">Проекты</button>
+                <button type="button" class="filter-pill active" data-value="initiatives">Инициативы</button>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-group__label">Режим карты</label>
+            <div class="filter-pills" data-filter="mode">
+                <button type="button" class="filter-pill active" data-value="markers">Маркеры</button>
+                <button type="button" class="filter-pill" data-value="cluster">Кластеры</button>
+                <button type="button" class="filter-pill" data-value="heat">Тепловая</button>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-group__label">Границы округов</label>
+            <div class="filter-pills">
+                <button type="button" class="filter-pill" id="toggleBoundaries">Показать</button>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn--ghost btn--block" id="resetFilters">Сбросить фильтры</button>
+
+        <div class="divider"></div>
+        <h4 style="margin-bottom: 10px;">Результаты поиска</h4>
+        <div class="result-list" id="resultList">
+            <div class="empty-state">Загрузка…</div>
+        </div>
+    </aside>
+
+    <div class="map-container">
+        <div id="map"></div>
+        <div class="map-legend">
+            <h4>Условные обозначения</h4>
+            <div class="map-legend__row"><span class="legend-dot" style="background:#4f46e5"></span> Инфраструктура</div>
+            <div class="map-legend__row"><span class="legend-dot" style="background:#16a34a"></span> Экология</div>
+            <div class="map-legend__row"><span class="legend-dot" style="background:#f59e0b"></span> Бизнес</div>
+            <div class="map-legend__row"><span class="legend-dot" style="background:#ec4899"></span> Социальный</div>
+            <div class="map-legend__row"><span class="legend-dot" style="background:#0ea5e9"></span> Транспорт</div>
+            <div class="map-legend__row"><span class="legend-dot" style="background:#8b5cf6"></span> Образование</div>
+            <div class="map-legend__row"><span class="legend-dot" style="background:#f43f5e"></span> Культура</div>
+            <div class="map-legend__row"><span class="legend-dot" style="background:#fb923c; border-radius:0; transform:rotate(45deg)"></span> Инициатива</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.MAP_CONFIG = {
+        center: [{{ map_center[0] }}, {{ map_center[1] }}],
+        zoom: {{ map_zoom }},
+        projectsUrl: "{{ url_for('api.projects') }}",
+        initiativesUrl: "{{ url_for('api.initiatives') }}"
+    };
+
+    // Административные границы городских округов (приближённые полигоны)
+    window.DISTRICT_BOUNDARIES = [
+        {
+            name: "Владивосток",
+            color: "#4f46e5",
+            coords: [
+                [43.0570, 131.8300], [43.0570, 131.9800],
+                [43.2000, 131.9800], [43.2000, 132.0600],
+                [43.2600, 132.0600], [43.2600, 131.8300],
+                [43.0570, 131.8300]
+            ]
+        },
+        {
+            name: "Находка",
+            color: "#16a34a",
+            coords: [
+                [42.7200, 132.7500], [42.7200, 133.0500],
+                [42.9500, 133.0500], [42.9500, 132.7500],
+                [42.7200, 132.7500]
+            ]
+        },
+        {
+            name: "Артём",
+            color: "#f59e0b",
+            coords: [
+                [43.2800, 132.0800], [43.2800, 132.3200],
+                [43.4500, 132.3200], [43.4500, 132.0800],
+                [43.2800, 132.0800]
+            ]
+        },
+        {
+            name: "Уссурийск",
+            color: "#ec4899",
+            coords: [
+                [43.6800, 131.8500], [43.6800, 132.1500],
+                [43.9200, 132.1500], [43.9200, 131.8500],
+                [43.6800, 131.8500]
+            ]
+        }
+    ];
+</script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}
