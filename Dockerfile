@@ -24,8 +24,13 @@ COPY --from=builder /install /usr/local
 # Copy application source
 COPY . .
 
-# Directories that need to persist (mounted as volumes)
-RUN mkdir -p instance app/static/uploads
+# Seed-данные — entrypoint копирует их в volumes при первом старте
+RUN cp -r app/static/uploads app/static/uploads_seed \
+    && cp -r instance instance_seed \
+    && mkdir -p instance app/static/uploads
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
 
@@ -33,5 +38,5 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     FLASK_DEBUG=false
 
-# gunicorn: 2 workers per CPU is a safe default for I/O-bound Flask
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "run:app"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--preload", "run:app"]
